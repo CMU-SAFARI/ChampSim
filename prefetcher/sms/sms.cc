@@ -15,7 +15,7 @@ void sms::prefetcher_initialize()
 }
 
 uint32_t sms::prefetcher_cache_operate(champsim::address address, champsim::address ip, uint8_t cache_hit, bool useful_prefetch, access_type type,
-                                       uint32_t metadata_in)
+                                       bool is_instr, uint32_t metadata_in)
 {
   uint64_t addr = address.to<uint64_t>();
   uint64_t page = addr >> sms::REGION_SIZE_LOG;
@@ -56,7 +56,8 @@ uint32_t sms::prefetcher_cache_operate(champsim::address address, champsim::addr
 
 void sms::prefetcher_cycle_operate() { issue_prefetch(); }
 
-uint32_t sms::prefetcher_cache_fill(champsim::address addr, long set, long way, uint8_t prefetch, champsim::address evicted_addr, uint32_t metadata_in)
+uint32_t sms::prefetcher_cache_fill(champsim::address addr, long set, long way, uint8_t prefetch, bool is_instr, champsim::address evicted_addr,
+                                    uint32_t metadata_in)
 {
   return 0;
 }

@@ -27,7 +27,7 @@ void ipcp::prefetcher_initialize()
 }
 
 uint32_t ipcp::prefetcher_cache_operate(champsim::address address, champsim::address ip_addr, uint8_t cache_hit, bool useful_prefetch, access_type type,
-                                        uint32_t metadata_in)
+                                        bool is_instr, uint32_t metadata_in)
 {
   uint64_t addr = address.to<uint64_t>();
   uint64_t ip = ip_addr.to<uint64_t>();
@@ -227,7 +227,8 @@ uint32_t ipcp::prefetcher_cache_operate(champsim::address address, champsim::add
   return 0;
 }
 
-uint32_t ipcp::prefetcher_cache_fill(champsim::address addr, long set, long way, uint8_t prefetch, champsim::address evicted_addr, uint32_t metadata_in)
+uint32_t ipcp::prefetcher_cache_fill(champsim::address addr, long set, long way, uint8_t prefetch, bool is_instr, champsim::address evicted_addr,
+                                     uint32_t metadata_in)
 {
   return 0;
 }
