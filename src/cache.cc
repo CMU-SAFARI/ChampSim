@@ -166,6 +166,12 @@ champsim::address CACHE::module_address(const T& element) const
   return champsim::address{address.slice_upper(match_offset_bits ? champsim::data::bits{} : OFFSET_BITS)};
 }
 
+template <typename T>
+bool CACHE::module_is_instr(const T& element) const
+{
+  return element.v_address == element.ip;
+}
+
 bool CACHE::handle_fill(const mshr_type& fill_mshr)
 {
   cpu = fill_mshr.cpu;
@@ -227,8 +233,11 @@ bool CACHE::handle_fill(const mshr_type& fill_mshr)
     }
   }
 
-  auto metadata_thru = impl_prefetcher_cache_fill(module_address(fill_mshr), get_set_index(fill_mshr.address), way_idx,
-                                                  (fill_mshr.type == access_type::PREFETCH), evicting_address, fill_mshr.data_promise->pf_metadata);
+  uint32_t metadata_thru = fill_mshr.data_promise->pf_metadata;
+  if (!module_is_instr(fill_mshr)) { // limiting only for data line fills
+    metadata_thru = impl_prefetcher_cache_fill(module_address(fill_mshr), get_set_index(fill_mshr.address), way_idx, (fill_mshr.type == access_type::PREFETCH),
+                                               evicting_address, fill_mshr.data_promise->pf_metadata);
+  }
   impl_replacement_cache_fill(fill_mshr.cpu, get_set_index(fill_mshr.address), way_idx, module_address(fill_mshr), fill_mshr.ip, evicting_address,
                               fill_mshr.type);
 
@@ -266,7 +275,7 @@ bool CACHE::try_hit(const tag_lookup_type& handle_pkt)
   }
 
   auto metadata_thru = handle_pkt.pf_metadata;
-  if (should_activate_prefetcher(handle_pkt)) {
+  if (should_activate_prefetcher(handle_pkt) && !module_is_instr(handle_pkt)) { // limiting only to data line hits
     metadata_thru = impl_prefetcher_cache_operate(module_address(handle_pkt), handle_pkt.ip, hit, useful_prefetch, handle_pkt.type, metadata_thru);
   }
 
