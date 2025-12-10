@@ -91,14 +91,18 @@ void O3_CPU::begin_phase()
 
 void O3_CPU::end_phase(unsigned finished_cpu)
 {
-  // Record where the phase ended (overwrite if this is later)
+  if (finished_cpu != this->cpu) {
+    return;
+  }
+
+  // Record where the phase ended for this CPU
   sim_stats.end_instrs = num_retired;
   sim_stats.end_cycles = current_time.time_since_epoch() / clock_period;
 
-  if (finished_cpu == this->cpu) {
-    finish_phase_instr = num_retired;
-    finish_phase_time = current_time;
+  finish_phase_instr = num_retired;
+  finish_phase_time = current_time;
 
+  if (!warmup) {
     roi_stats = sim_stats;
   }
 }
