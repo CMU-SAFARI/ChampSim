@@ -145,8 +145,8 @@ phase_stats do_phase(const phase_info& phase, environment& env, std::vector<trac
       // Phase complete
       next_phase_complete[cpu.cpu] = next_phase_complete[cpu.cpu] || (cpu.sim_instr() >= length);
 
-      //halt cpu if warmup
-      if(next_phase_complete[cpu.cpu] && is_warmup && !cpu.halt) {
+      // Halt CPUs during warmup once their instruction budget is met
+      if (next_phase_complete[cpu.cpu] && is_warmup && !cpu.halt) {
         cpu.halt = true;
         fmt::print("{} halting CPU {} at instruction {} cycle {} for remainder of phase\n", phase_name, cpu.cpu, cpu.sim_instr(), cpu.sim_cycle());
       }
@@ -158,8 +158,21 @@ phase_stats do_phase(const phase_info& phase, environment& env, std::vector<trac
           op.end_phase(cpu.cpu);
         }
 
-        fmt::print("{} finished CPU {} instructions: {} cycles: {} cumulative IPC: {:.4g} (Simulation time: {:%H hr %M min %S sec})\n", phase_name, cpu.cpu,
-                   cpu.sim_instr(), cpu.sim_cycle(), std::ceil(cpu.sim_instr()) / std::ceil(cpu.sim_cycle()), elapsed_time());
+        if (!is_warmup) {
+          // Simulation phase: true ROI, from roi_stats
+          auto roi_instr = cpu.roi_instr();
+          auto roi_cycle = cpu.roi_cycle();
+          auto roi_ipc = std::ceil(roi_instr) / std::ceil(roi_cycle);
+          fmt::print("{} finished CPU {} instructions: {} cycles: {} cumulative IPC: {:.4g} (Simulation time: {:%H hr %M min %S sec})\n",
+                    phase_name, cpu.cpu, roi_instr, roi_cycle, roi_ipc, elapsed_time());
+        } else {
+          // Warmup phase: just print using sim_instr/sim_cycle (per-phase progress)
+          auto w_instr = cpu.sim_instr();
+          auto w_cycle = cpu.sim_cycle();
+          auto w_ipc = std::ceil(w_instr) / std::ceil(w_cycle);
+          fmt::print("{} finished CPU {} instructions: {} cycles: {} cumulative IPC: {:.4g} (Simulation time: {:%H hr %M min %S sec})\n",
+                    phase_name, cpu.cpu, w_instr, w_cycle, w_ipc, elapsed_time());
+        }
       }
     }
 
@@ -167,9 +180,14 @@ phase_stats do_phase(const phase_info& phase, environment& env, std::vector<trac
   }
 
   for (O3_CPU& cpu : env.cpu_view()) {
-    fmt::print("{} complete CPU {} instructions: {} cycles: {} cumulative IPC: {:.4g} (Simulation time: {:%H hr %M min %S sec})\n", phase_name, cpu.cpu,
-               cpu.sim_instr(), cpu.sim_cycle(), std::ceil(cpu.sim_instr()) / std::ceil(cpu.sim_cycle()), elapsed_time());
-  }
+    if (!is_warmup) {
+      auto roi_instr = cpu.roi_instr();
+      auto roi_cycle = cpu.roi_cycle();
+      auto roi_ipc = std::ceil(roi_instr) / std::ceil(roi_cycle);
+      fmt::print("{} complete CPU {} instructions: {} cycles: {} cumulative IPC: {:.4g} (Simulation time: {:%H hr %M min %S sec})\n",
+                phase_name, cpu.cpu, roi_instr, roi_cycle, roi_ipc, elapsed_time());
+    }
+}
 
   phase_stats stats;
   stats.name = phase.name;

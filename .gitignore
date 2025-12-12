@@ -30,3 +30,8 @@ compile_commands.json
 
 .vscode/
 **/.DS_Store
+
+# Large trace files
+*.xz
+*.gz
+*.trace
